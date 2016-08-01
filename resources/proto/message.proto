@@ -7,4 +7,10 @@ message Entry{
   optional string link = 3;
   optional string source = 4;
   required string data = 5;
+  required string id = 6;
+}
+
+message EntryAck {
+  required string id = 1;
+  required string status = 2;
 }

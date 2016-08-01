@@ -3,9 +3,9 @@
         [jackdaw.client])
   (:require [taoensso.timbre :as log]
             [jackdaw.transport :refer :all]
-
+            [cheshire.core :refer [generate-string parse-string]]
             )
-  (:import [com.jackdow Data$Entry]
+  (:import [com.jackdow Data$Entry Data$EntryAck]
            [io.netty.handler.codec.protobuf ProtobufDecoder
                              ProtobufEncoder
                              ProtobufVarint32FrameDecoder
@@ -30,6 +30,8 @@
   []
   (ProtobufEncoder.))
 
+(def last-rec (atom nil))
+
 (defn pbuff-chan-handler []
   (proxy [ChannelInboundHandlerAdapter] []
     (channelActive [^ChannelHandlerContext ctx]
@@ -43,7 +45,14 @@
       )
     (channelRead [ctx req]
       (log/info "Received from CLIENT!!!!")
-      (log/info req))
+      (log/info req)
+      (reset! last-rec req)
+      (let [id (.getId req)
+            ack (doto (Data$EntryAck/newBuilder)
+                  (.setId id)
+                  (.setStatus "ok"))]
+          (.write ctx (.build ack))
+          (.flush ctx)))
     (channelReadComplete [ctx]
       (.flush ctx))
     (exceptionCaught [ctx cause]
@@ -69,21 +78,26 @@
 
 
 
-(def entry (doto (Data$Entry/newBuilder)
+(defn entry [] (let [id (rand-int 6e5)] (doto (Data$Entry/newBuilder)
+              (.setId (str id))
               (.setMultiaddr "/ip4/XX.YY.ZZZ.YY/tcp/2343")
-              (.setMulticodec "")
+              (.setMulticodec "/json")
               (.setLink "")
               (.setSource "me")
-              (.setData "{\"a\":1}" )))
+              (.setData (generate-string {:ts (str (java.util.Date.)) :id id  }) ))))
 
 (defn client-handler []
   (proxy [SimpleChannelInboundHandler] []
     (channelActive [  ctx]
       (log/info "Channel Active ")
       (log/info "Send entry to Server")
-      (.write ctx (.build entry))
-      (.flush ctx)
-      )
+      (.start (Thread. (fn[]
+        (loop [i 0]
+          (when (< i 10)
+              (.write ctx (.build (entry)))
+              (.flush ctx)
+              (Thread/sleep 3000)
+            (recur (inc i))))))))
     (channelRegistered [  ctx]
       (let [ch (.channel ctx)]
           ;; do smth with the channel
@@ -91,7 +105,9 @@
 
         )
       )
-    (channelRead [ ctx req])
+    (channelRead [ctx req]
+      (log/infof "Server sent smth \n ========\n%s\n" req)
+      )
     (exceptionCaught [ ctx cause]
       (.printStackTrace cause)
       (.close ctx))))
@@ -99,7 +115,7 @@
 
 
 (defn client-initializer []
-  (let [pr-decoder (protobuf-decoder)
+  (let [pr-decoder (ProtobufDecoder. (Data$EntryAck/getDefaultInstance))
         pr-encoder (protobuf-encoder)]
   (proxy [ChannelInitializer] []
     (initChannel [^SocketChannel sc]
