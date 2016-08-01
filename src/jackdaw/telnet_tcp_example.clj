@@ -1,5 +1,8 @@
 (ns jackdaw.telnet-tcp-example
-  (:require [taoensso.timbre :as log])
+  (:require [taoensso.timbre :as log]
+            [jackdaw.transport :refer :all]
+            [jackdaw.server :refer [TCPServer]]
+            )
   (:import [java.net InetSocketAddress InetAddress UnknownHostException]
            [java.util List]
 
@@ -15,7 +18,6 @@
                              SimpleChannelInboundHandler]
            [io.netty.channel.group ChannelGroup
                                    DefaultChannelGroup]
-
            (io.netty.handler.codec MessageToMessageDecoder
                                   LengthFieldBasedFrameDecoder
                                   LengthFieldPrepender
@@ -24,8 +26,6 @@
            [io.netty.handler.codec.string StringDecoder StringEncoder]
            [io.netty.handler.logging LoggingHandler LogLevel]
            [io.netty.handler.ssl SslHandler]
-          ;  [io.netty.channel.epoll EpollEventLoopGroup EpollServerSocketChannel]
-           [io.netty.channel.nio NioEventLoopGroup ]
            (io.netty.channel.socket DatagramPacket SocketChannel)
            [io.netty.channel.socket.nio NioServerSocketChannel]
            (io.netty.util ReferenceCounted)
@@ -101,76 +101,9 @@
 
             ch)))))
 
-(defn derefable
-  "A simple wrapper for a netty future which on deref just calls
-  (syncUninterruptibly f), and returns the future's result."
-  [^Future f]
-  (reify clojure.lang.IDeref
-    (deref [_]
-      (.syncUninterruptibly f)
-      (.get f))))
-
-(defn ^Future shutdown-event-executor-group
-  "Gracefully shut down an event executor group. Returns a derefable future."
-  [^EventExecutorGroup g]
-  ; 10ms quiet period, 10s timeout.
-  (derefable (.shutdownGracefully g 10 1000 TimeUnit/MILLISECONDS)))
-
-(defn ^DefaultChannelGroup channel-group
-  "Make a channel group with a given name."
-  [name]
-  (DefaultChannelGroup. name (ImmediateEventExecutor/INSTANCE)))
-(defprotocol Server (start! [_]) (stop! [_]))
-
-(defrecord TelnetServer [host port handler channel-group killer]
-  Server
-  (stop! [this]
-    (locking this
-      (when @killer
-        (@killer)
-        (reset! killer nil))))
-
-  (start! [this]
-    (let [boss-grp (NioEventLoopGroup. 1)
-          worker-grp (NioEventLoopGroup. )
-          bootstrap (ServerBootstrap. )]
-          (doto bootstrap
-                     (.group boss-grp worker-grp)
-                     (.channel NioServerSocketChannel)
-                     (.option ChannelOption/SO_REUSEADDR true)
-                     (.option ChannelOption/TCP_NODELAY true)
-                     (.option ChannelOption/SO_BACKLOG (int 5))
-                     (.childOption ChannelOption/SO_REUSEADDR true)
-                     (.childOption ChannelOption/TCP_NODELAY true)
-                     (.childOption ChannelOption/SO_KEEPALIVE true)
-                     (.handler (LoggingHandler.))
-                     (.childHandler handler))
-
-          (->> (InetSocketAddress. host port )
-               (.bind bootstrap)
-               (.sync)
-               (.channel)
-               (.add channel-group)
-
-               )
-          (log/info "TCP server" host port "online")
-          (reset! killer
-                  (fn killer []
-                    (.. channel-group close awaitUninterruptibly)
-                    ; Shut down workers and boss concurrently.
-                    (let [w (shutdown-event-executor-group worker-grp)
-                          b (shutdown-event-executor-group boss-grp)]
-                      @w
-                      @b)
-                    (log/info "TCP server" host port "shut down")))
-
-          )
-    )
-  )
-
 (defn kick-off []
   (let [channel-group (channel-group (str "tcp-server localhost:" 12345))
-        handler  (channel-initializer)]
-    (when-let [srv (TelnetServer.  "127.0.0.1" 12345 handler channel-group (atom {}))]
+        handler  (telnet-channel-initializer)]
+    (when-let [srv (TCPServer.  "127.0.0.1" 12345 handler channel-group (atom {}))]
       (start! srv)
       srv)))

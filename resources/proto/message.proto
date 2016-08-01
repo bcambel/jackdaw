@@ -1,0 +1,10 @@
+option java_package = "com.jackdow";
+option java_outer_classname = "Data";
+
+message Entry{
+  optional string multiaddr = 1;
+  optional string multicodec = 2;
+  optional string link = 3;
+  optional string source = 4;
+  required string data = 5;
+}

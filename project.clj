@@ -11,7 +11,10 @@
                  [cheshire "5.6.0"]
                  [clj-time "0.12.0"]
                  [com.taoensso/timbre "4.5.1"]
+                 [com.google.protobuf/protobuf-java "2.6.1"]
   ]
+  :java-source-paths ["src_java"]
+  ; :plugins [[lein-protobuf "0.5.0"]]
   :main ^:skip-aot jackdaw.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})
