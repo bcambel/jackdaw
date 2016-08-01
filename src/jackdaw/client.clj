@@ -67,6 +67,7 @@
           )
 
           (log/info "TCP server" host port "online")
+          this
           ; (reset! killer
           ;         (fn killer []
           ;           (.shutdownGracefully group)

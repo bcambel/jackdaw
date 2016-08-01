@@ -42,6 +42,7 @@
       (log/info "Channel InActive")
       )
     (channelRead [ctx req]
+      (log/info "Received from CLIENT!!!!")
       (log/info req))
     (channelReadComplete [ctx]
       (.flush ctx))
@@ -67,20 +68,33 @@
             ch)))))
 
 
-(deftype ClientHandler [channel]
-  ChannelInboundHandler
-    (channelActive [ this ctx]
-      (log/info "Channel Active "))
-    (channelRegistered [ this ctx]
+
+(def entry (doto (Data$Entry/newBuilder)
+              (.setMultiaddr "/ip4/XX.YY.ZZZ.YY/tcp/2343")
+              (.setMulticodec "")
+              (.setLink "")
+              (.setSource "me")
+              (.setData "{\"a\":1}" )))
+
+(defn client-handler []
+  (proxy [SimpleChannelInboundHandler] []
+    (channelActive [  ctx]
+      (log/info "Channel Active ")
+      (log/info "Send entry to Server")
+      (.write ctx (.build entry))
+      (.flush ctx)
+      )
+    (channelRegistered [  ctx]
       (let [ch (.channel ctx)]
           ;; do smth with the channel
-          (assoc this :channel ch)
+          ; (assoc this :channel ch)
+
         )
       )
-    (channelRead [this  ctx req])
-    (exceptionCaught [this ctx cause]
+    (channelRead [ ctx req])
+    (exceptionCaught [ ctx cause]
       (.printStackTrace cause)
-      (.close ctx)))
+      (.close ctx))))
 
 
 
@@ -94,7 +108,7 @@
           (.addLast pipe (into-array ChannelHandler [pr-decoder]))
           (.addLast pipe (into-array ChannelHandler [(ProtobufVarint32LengthFieldPrepender.)]))
           (.addLast pipe (into-array ChannelHandler [pr-encoder]))
-          ; (.addLast pipe (into-array ChannelHandler [(ClientHandler. nil)]))
+          (.addLast pipe (into-array ChannelHandler [(client-handler)]))
           sc)))))
 
 (defn kick-off []
