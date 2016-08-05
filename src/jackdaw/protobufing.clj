@@ -5,7 +5,7 @@
             [jackdaw.transport :refer :all]
             [cheshire.core :refer [generate-string parse-string]]
             )
-  (:import [com.jackdow Data$Entry Data$EntryAck]
+  (:import [com.jackdaw Data$Entry Data$EntryAck]
            [io.netty.handler.codec.protobuf ProtobufDecoder
                              ProtobufEncoder
                              ProtobufVarint32FrameDecoder
@@ -127,13 +127,13 @@
           (.addLast pipe (into-array ChannelHandler [(client-handler)]))
           sc)))))
 
-(defn kick-off []
+(defn kick-off [server-port client-port]
   (let [host "127.0.0.1"
-        port 12346
-        channel-group (channel-group (str "tcp-server " host ":" port))
+        
+        channel-group (channel-group (str "tcp-server " host ":" server-port))
         handler  (pbuff-channel-initializer)]
-    (let [srv (->TCPServer  host port handler channel-group (atom {}))
-               client (->TCPClient host port client-initializer nil nil )]
+    (let [srv (->TCPServer  host server-port handler channel-group (atom {}))
+               client (->TCPClient host client-port client-initializer nil nil )]
       ; (start! srv)
 
       ; (thread

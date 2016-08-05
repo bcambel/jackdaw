@@ -1,11 +1,10 @@
 (ns jackdaw.telnet-tcp-example
+  (:use [jackdaw.server]
+        [jackdaw.client])
   (:require [taoensso.timbre :as log]
-            [jackdaw.transport :refer :all]
-            [jackdaw.server :refer [TCPServer]]
-            )
+            [jackdaw.transport :refer :all])
   (:import [java.net InetSocketAddress InetAddress UnknownHostException]
            [java.util List]
-
            [java.util.concurrent Executors TimeUnit]
            [java.nio.channels ClosedChannelException]
            (javax.net.ssl SSLContext)
@@ -103,7 +102,9 @@
 
 (defn kick-off []
   (let [channel-group (channel-group (str "tcp-server localhost:" 12345))
-        handler  (telnet-channel-initializer)]
-    (when-let [srv (TCPServer.  "127.0.0.1" 12345 handler channel-group (atom {}))]
+        ; handler  (time-chan-init)
+        handler (telnet-channel-initializer)
+        ]
+    (when-let [srv (->TCPServer  "127.0.0.1" 12345 handler channel-group (atom {}))]
       (start! srv)
       srv)))

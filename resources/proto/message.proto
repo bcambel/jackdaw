@@ -1,4 +1,4 @@
-option java_package = "com.jackdow";
+option java_package = "com.jackdaw";
 option java_outer_classname = "Data";
 
 message Entry{
