@@ -127,17 +127,10 @@
           (.addLast pipe (into-array ChannelHandler [(client-handler)]))
           sc)))))
 
-(defn kick-off [server-port client-port]
+(defn kick-off [{:keys [server-port client-host client-port] }]
   (let [host "127.0.0.1"
-        
         channel-group (channel-group (str "tcp-server " host ":" server-port))
         handler  (pbuff-channel-initializer)]
     (let [srv (->TCPServer  host server-port handler channel-group (atom {}))
-               client (->TCPClient host client-port client-initializer nil nil )]
-      ; (start! srv)
-
-      ; (thread
-      ;   (Thread/sleep 5000)
-      ;   (connect! client))
-
+          client (->TCPClient client-host client-port client-initializer nil nil )]
       [srv client])))
