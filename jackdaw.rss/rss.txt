@@ -1,0 +1,3 @@
+http://thenextweb.com/feed/
+http://www.ghacks.net/feed/
+https://xkcd.com/atom.xml
