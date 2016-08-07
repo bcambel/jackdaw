@@ -1,8 +1,9 @@
 # jackdaw
 
-http://voices.nationalgeographic.com/files/2014/02/Jackdaw2_.jpg
+Meet Jackie
 
-http://img11.deviantart.net/5548/i/2012/187/b/6/jackdaw_by_kariatyda-d566mzq.jpg
+![Jackdaw](http://voices.nationalgeographic.com/files/2014/02/Jackdaw2_.jpg)
+
 
 ## Installation
 
