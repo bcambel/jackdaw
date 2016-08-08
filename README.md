@@ -7,7 +7,15 @@ Meet Jackie
 
 ## Installation
 
-Download from http://example.com/FIXME.
+
+
+Consist of multiple modules to retrieve data from different kind of sources.
+
+- Twitter [jackdaw.twitter/]
+- Github []
+- Stackoverflow []
+- RSS []
+- Youtube []
 
 ## Usage
 

@@ -17,13 +17,30 @@
 
 (def fs (file-store ".store"))
 
+
+(def user-fields-select [ :description :profile_image_url :name :favourites_count :screen_name :listed_count :statuses_count :following
+		     :lang :utc_offset :id :time_zone :url :geo_enabled :location :followers_count :friends_count :verified :created_at
+		     :text ])
+
+(defn cleanup
+  "Who needs to learn the profile coloring options of a user"
+  [tweet]
+  (assoc tweet :user
+        (select-keys (:user tweet) user-fields-select)))
+
 (defn store! [msg-list]
   ; (log/info msg-list)
-  (let [messages (mapv (fn [msg] (json/parse-string msg true)) msg-list)]
+  (let [messages (mapv
+                    (fn [msg] (-> msg
+                                (json/parse-string true)
+                                (cleanup)))
+                    msg-list)]
     ; (log/info messages)
     (block/store! fs (str messages))
     (log/infof "Written %d tweets: %s.. " (count messages) (s/join #"," (take 3 (mapv (comp str :id) messages)))))
   )
+
+
 
 ; (def queue (LinkedBlockingQueue. (int 1e5)))
 
@@ -52,7 +69,7 @@
         ; (store! temp-list)
         ; (store! (seq (.toArray queue)))
         ; (.clear queue)
-        (log/sometimes 0.4 (log/infof "Queue has %d items " (.size queue)))
+        (log/sometimes 0.5 (log/infof "Queue has %d items " (.size queue)))
 
         (when-let [size (.size queue) ]
           (loop [i 0 el []]
@@ -60,7 +77,7 @@
               (store! el)
               (recur (inc i) (conj el (.take queue))))))
 
-        (Thread/sleep 5000)
+        (Thread/sleep 10000)
         )
         )
 
