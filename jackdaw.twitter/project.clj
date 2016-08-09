@@ -6,9 +6,10 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
     [cheshire "5.6.3"]
     ; [twitter-api "0.7.8" :exclusions [commons-codec]]
-    [com.taoensso/timbre "4.5.1"]
+    [com.taoensso/timbre "4.7.3"]
     [com.twitter/hbc-core "2.2.0"]
     [mvxcvi/blocks "0.7.1"]
+    [com.taoensso/nippy "2.12.1"]
   ]
   ; :main ^:skip-aot jackdaw.twitter
   :target-path "target/%s"
