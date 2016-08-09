@@ -3,6 +3,7 @@
             [cheshire.core :as json]
             [blocks.core :as block]
             [clojure.string :as s]
+            [taoensso.nippy :as nippy]
             )
   (:use blocks.store.file)
   (:import [com.google.common.collect Lists]
@@ -36,7 +37,7 @@
                                 (cleanup)))
                     msg-list)]
     ; (log/info messages)
-    (block/store! fs (str messages))
+    (block/store! fs (nippy/freeze messages))
     (log/infof "Written %d tweets: %s.. " (count messages) (s/join #"," (take 3 (mapv (comp str :id) messages)))))
   )
 
@@ -77,7 +78,7 @@
               (store! el)
               (recur (inc i) (conj el (.take queue))))))
 
-        (Thread/sleep 10000)
+        (Thread/sleep 30000)
         )
         )
 
